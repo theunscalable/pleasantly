@@ -15,6 +15,7 @@ class ReadingListDao(private val context: Context) {
     private val fileName = "reading_list.json"
     private val gson = Gson()
 
+    @Synchronized
     fun saveReadingList(items: List<ReadingItem>) {
         val jsonString = gson.toJson(items)
         context.openFileOutput(fileName, Context.MODE_PRIVATE).use {
