@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
             // Create and show the AlertDialog
             AlertDialog.Builder(this).apply {
                 setView(dialogView)
-                setTitle("Add Reading Item")
+                setTitle("Add to Reading List")
                 setPositiveButton("Save") { _, _ ->
                     // Handle the save action
                     val title = editTextTitle.text.toString().trim()
