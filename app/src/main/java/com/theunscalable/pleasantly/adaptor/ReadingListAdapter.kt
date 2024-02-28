@@ -1,6 +1,8 @@
 package com.theunscalable.pleasantly.adaptor
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,7 +18,14 @@ class ReadingListAdapter(private val context: Context) :
     private var items: MutableList<ReadingItem> = mutableListOf()
     private var readingListDao: ReadingListDao = ReadingListDao(context)
 
-    class ViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(private val view: View, clickAtPosition: (Int) -> Unit) :
+        RecyclerView.ViewHolder(view) {
+        init {
+            view.setOnClickListener {
+                clickAtPosition(bindingAdapterPosition)
+            }
+        }
+
         fun bind(item: ReadingItem) {
             view.findViewById<TextView>(R.id.itemTitle).text = item.title
             view.findViewById<TextView>(R.id.itemUrl).text = item.url
@@ -27,7 +36,10 @@ class ReadingListAdapter(private val context: Context) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
         val view = layoutInflater.inflate(R.layout.reading_list_item, parent, false)
-        return ViewHolder(view)
+        return ViewHolder(view) { position ->
+            val url = items[position].url
+            openUrlInBrowser(url, context)
+        }
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -49,5 +61,10 @@ class ReadingListAdapter(private val context: Context) :
         val newId = if (items.isEmpty()) 1 else items.maxByOrNull { it.id }?.id?.plus(1) ?: 1
         val newItem = ReadingItem(newId, title, url)
         items.add(newItem)
+    }
+
+    private fun openUrlInBrowser(url: String, context: Context) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        context.startActivity(intent)
     }
 }
