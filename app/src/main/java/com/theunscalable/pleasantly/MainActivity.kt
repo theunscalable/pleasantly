@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -32,11 +33,27 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         readingListAdapter = ReadingListAdapter(this@MainActivity)
 
-        findViewById<RecyclerView>(R.id.readingListRecyclerView).apply {
+        val recyclerView = findViewById<RecyclerView>(R.id.readingListRecyclerView).apply {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = readingListAdapter
         }
+
+        val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder, target: RecyclerView.ViewHolder): Boolean {
+                // This callback is not used in swipe actions, return false.
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.bindingAdapterPosition
+                readingListAdapter.markItemAsCompleted(position)
+            }
+        }
+
+        // Attach the ItemTouchHelper to the RecyclerView
+        val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
+        itemTouchHelper.attachToRecyclerView(recyclerView)
 
         findViewById<FloatingActionButton>(R.id.addItemFab).setOnClickListener { view ->
             // Inflate the custom layout

@@ -15,8 +15,9 @@ import com.theunscalable.pleasantly.dao.ReadingListDao
 class ReadingListAdapter(private val context: Context) :
     RecyclerView.Adapter<ReadingListAdapter.ViewHolder>() {
 
-    private var items: MutableList<ReadingItem> = mutableListOf()
     private var readingListDao: ReadingListDao = ReadingListDao(context)
+    private var itemMap: MutableMap<Int, ReadingItem> = readingListDao.loadReadingList()
+    private var items: MutableList<ReadingItem> = itemMap.values.filter { !it.completed }.toMutableList()
 
     class ViewHolder(private val view: View, clickAtPosition: (Int) -> Unit) :
         RecyclerView.ViewHolder(view) {
@@ -48,12 +49,8 @@ class ReadingListAdapter(private val context: Context) :
 
     override fun getItemCount() = items.size
 
-    fun getCurrentList(): List<ReadingItem> {
-        return items
-    }
-
     fun saveCurrentList() {
-        readingListDao.saveReadingList(items)
+        readingListDao.saveReadingList(itemMap)
     }
 
     fun addToCurrentList(title: String, url: String) {
@@ -61,10 +58,19 @@ class ReadingListAdapter(private val context: Context) :
         val newId = if (items.isEmpty()) 1 else items.maxByOrNull { it.id }?.id?.plus(1) ?: 1
         val newItem = ReadingItem(newId, title, url)
         items.add(newItem)
+        itemMap[newId] = newItem
     }
 
     private fun openUrlInBrowser(url: String, context: Context) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         context.startActivity(intent)
+    }
+    fun markItemAsCompleted(position: Int) {
+        // Mark the item as completed
+        itemMap[items[position].id]?.completed = true
+        readingListDao.saveReadingList(itemMap)
+        // Remove the item from the UI list
+        items.removeAt(position)
+        notifyItemRemoved(position)
     }
 }
