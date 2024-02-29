@@ -59,12 +59,14 @@ class ReadingListAdapter(private val context: Context) :
         val newItem = ReadingItem(newId, title, url)
         items.add(newItem)
         itemMap[newId] = newItem
+        notifyItemInserted(items.size - 1)
     }
 
     private fun openUrlInBrowser(url: String, context: Context) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         context.startActivity(intent)
     }
+
     fun markItemAsCompleted(position: Int) {
         // Mark the item as completed
         itemMap[items[position].id]?.completed = true
