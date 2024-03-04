@@ -8,8 +8,8 @@ import java.io.*
 
 data class ReadingItem(
     val id: Int,
-    val title: String,
-    val url: String,
+    var title: String,
+    var url: String,
     var completed: Boolean = false
 )
 

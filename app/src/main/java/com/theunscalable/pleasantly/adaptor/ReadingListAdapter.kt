@@ -6,24 +6,34 @@ import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.theunscalable.pleasantly.R
 import com.theunscalable.pleasantly.dao.ReadingItem
 import com.theunscalable.pleasantly.dao.ReadingListDao
 
-class ReadingListAdapter(private val context: Context) :
+class ReadingListAdapter(private val context: Context,
+                         private val openUpdateDialog : (Int, String, String) -> Unit) :
     RecyclerView.Adapter<ReadingListAdapter.ViewHolder>() {
 
     private var readingListDao: ReadingListDao = ReadingListDao(context)
     private var itemMap: MutableMap<Int, ReadingItem> = readingListDao.loadReadingList()
-    private var items: MutableList<ReadingItem> = itemMap.values.filter { !it.completed }.toMutableList()
+    private var items: MutableList<ReadingItem> =
+        itemMap.values.filter { !it.completed }.toMutableList()
 
-    class ViewHolder(private val view: View, clickAtPosition: (Int) -> Unit) :
+    class ViewHolder(private val view: View,
+                     clickAtPosition: (Int) -> Unit,
+                     clickEditAtPosition: (Int) -> Unit) :
         RecyclerView.ViewHolder(view) {
+        private val editButton: ImageView = view.findViewById(R.id.editButton)
         init {
             view.setOnClickListener {
                 clickAtPosition(bindingAdapterPosition)
+            }
+            editButton.setOnClickListener {
+                // Invoke a method in your adapter or use an interface to communicate with your activity/fragment
+                clickEditAtPosition(bindingAdapterPosition)  // Assuming you have a `editListener` function defined
             }
         }
 
@@ -37,10 +47,14 @@ class ReadingListAdapter(private val context: Context) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val layoutInflater = LayoutInflater.from(parent.context)
         val view = layoutInflater.inflate(R.layout.reading_list_item, parent, false)
-        return ViewHolder(view) { position ->
+        fun clickAtPosition(position: Int) {
             val url = items[position].url
             openUrlInBrowser(url, context)
         }
+        fun clickEditAtPosition(position: Int) {
+            openUpdateDialog(position, items[position].title, items[position].url)
+        }
+        return ViewHolder(view, ::clickAtPosition, ::clickEditAtPosition)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -53,7 +67,15 @@ class ReadingListAdapter(private val context: Context) :
         readingListDao.saveReadingList(itemMap)
     }
 
-    fun addToCurrentList(title: String, url: String) {
+    fun updateOrAddToCurrentList(itemPosition: Int, title: String, url: String) {
+        if (itemPosition >= 0) {
+            items[itemPosition].title = title
+            items[itemPosition].url = url
+            val id = items[itemPosition].id
+            itemMap[id] = items[itemPosition]
+            notifyItemChanged(itemPosition)
+            return
+        }
         // Find the maximum ID in the current list and add 1 for the new ID
         val newId = if (items.isEmpty()) 1 else items.maxByOrNull { it.id }?.id?.plus(1) ?: 1
         val newItem = ReadingItem(newId, title, url)

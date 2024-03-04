@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openAddToReadingListDialog(title: String, url: String) {
+    private fun openUpdateOrAddToReadingListDialog(itemPosition: Int, title: String, url: String) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_reading_item, null)
         val editTextTitle = dialogView.findViewById<EditText>(R.id.editTextTitle)
         val editTextUrl = dialogView.findViewById<EditText>(R.id.editTextUrl)
@@ -41,11 +41,16 @@ class MainActivity : AppCompatActivity() {
 
         AlertDialog.Builder(this).apply {
             setView(dialogView)
-            setTitle("Add to Reading List")
+            if (itemPosition < 0) {
+                setTitle("Add to Reading List")
+            }
+            else {
+                setTitle("Update Item")
+            }
             setPositiveButton("Save") { _, _ ->
                 val titleToSave = editTextTitle.text.toString().trim()
                 val urlToSave = editTextUrl.text.toString().trim()
-                readingListAdapter.addToCurrentList(titleToSave, urlToSave)
+                readingListAdapter.updateOrAddToCurrentList(itemPosition, titleToSave, urlToSave)
                 readingListAdapter.saveCurrentList()
             }
             setNegativeButton("Cancel", null)
@@ -55,7 +60,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        readingListAdapter = ReadingListAdapter(this@MainActivity)
+        readingListAdapter = ReadingListAdapter(
+            this@MainActivity, ::openUpdateOrAddToReadingListDialog)
         val recyclerView = findViewById<RecyclerView>(R.id.readingListRecyclerView).apply {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@MainActivity)
@@ -81,7 +87,7 @@ class MainActivity : AppCompatActivity() {
         val itemTouchHelper = ItemTouchHelper(itemTouchHelperCallback)
         itemTouchHelper.attachToRecyclerView(recyclerView)
         findViewById<FloatingActionButton>(R.id.addItemFab).setOnClickListener {
-            openAddToReadingListDialog("", "")
+            openUpdateOrAddToReadingListDialog(-1,"", "")
         }
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
@@ -89,7 +95,7 @@ class MainActivity : AppCompatActivity() {
             val sharedTitle = intent.getStringExtra(Intent.EXTRA_SUBJECT) ?: ""
             // Open the dialog with the shared title and URL
             Log.d("MainActivity", "Shared text received: $sharedText")
-            openAddToReadingListDialog(sharedTitle, sharedText)
+            openUpdateOrAddToReadingListDialog(-1, sharedTitle, sharedText)
         }
     }
 
@@ -100,9 +106,7 @@ class MainActivity : AppCompatActivity() {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: ""
             // Assuming the shared text is the URL, and EXTRA_SUBJECT might contain the title
             val sharedTitle = intent.getStringExtra(Intent.EXTRA_SUBJECT) ?: ""
-            // Open the dialog with the shared title and URL
-            Log.d("MainActivity", "Shared text received: $sharedText")
-            openAddToReadingListDialog(sharedTitle, sharedText)
+            openUpdateOrAddToReadingListDialog(-1, sharedTitle, sharedText)
         }
     }
 
